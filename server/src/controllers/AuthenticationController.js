@@ -1,25 +1,21 @@
-const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const config = require('../config/config');
 const { User } = require('../models');
+
+function jwtSignUser(user) {
+  const ONE_WEEK = 60 * 60 * 24 * 7;
+  return jwt.sign(user, config.authentication.jwtSecret, {
+    expiresIn: ONE_WEEK,
+  });
+}
 
 module.exports = {
   async register(req, res) {
     try {
-      const plainTextPW = req.body.password;
-      bcrypt.hash(plainTextPW, 10, (err, hash) => {
-        if (err) {
-          res.status(500).send({
-            error: 'There was a problem contacting the server',
-          });
-        } else {
-          const user = {
-            email: req.body.email,
-            username: req.body.username,
-            password: hash,
-          };
-          User.create(user);
-          res.send(user);
-        }
-      });
+      console.log(req.body);
+      const user = await User.create(req.body);
+      console.log('made it');
+      res.send(user.toJSON());
     } catch (err) {
       res.status(400).send({
         error: 'This email or username is already in use.',
@@ -35,30 +31,27 @@ module.exports = {
         },
       });
       if (!user) {
-        res.status(403).send({
+        console.log('hi');
+        return res.status(403).send({
           error: 'The login information was incorrect',
         });
       }
-      bcrypt.compare(password, user.password, (err, isValid) => {
-        console.log(isValid);
-        if (err) {
-          res.status(500).send({
-            error: 'There was a problem contacting the server',
-          });
-        } if (isValid) {
-          const userJson = user.toJSON();
-          console.log('made it');
-          res.send({
-            user: userJson,
-          });
-        } else {
-          res.status(403).send({
-            error: 'The login information was incorrect',
-          });
-        }
+
+      const isPasswordValid = await user.comparePassword(password);
+      console.log(isPasswordValid);
+      if (!isPasswordValid) {
+        return res.status(403).send({
+          error: 'The login information was incorrect',
+        });
+      }
+
+      const userJson = user.toJSON();
+      return res.send({
+        user: userJson,
+        token: jwtSignUser(userJson),
       });
     } catch (err) {
-      res.status(500).send({
+      return res.status(500).send({
         error: 'An error has occured',
       });
     }
