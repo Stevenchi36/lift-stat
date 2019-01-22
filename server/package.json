@@ -7,7 +7,7 @@
     "start": "nodemon src/app.js --exec \"npm run lint && node\"",
     "lint": "eslint --fix **/*.js"
   },
-  "author": "Steven Childre <childrey.steven@gmail.com>",
+  "author": "Steven Childrey <childrey.steven@gmail.com>",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^3.0.2",
